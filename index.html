@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="theme-color" content="#0a0a0a"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+<meta name="apple-mobile-web-app-title" content="燃脂训练"/>
+<title>臀腿燃脂 · 4周计划</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;600;700;900&display=swap" rel="stylesheet"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#0a0a0a;color:#fff;font-family:'Noto Sans SC',sans-serif;min-height:100vh;overscroll-behavior:none}
+button{font-family:inherit;cursor:pointer}
+input[type=time]{color-scheme:dark}
+::-webkit-scrollbar{display:none}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{0%{transform:scale(0.92)}60%{transform:scale(1.06)}100%{transform:scale(1)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.5}}
+.fade-in{animation:fadeIn 0.25s ease forwards}
+.pop{animation:pop 0.3s ease forwards}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+// ── DATA ──────────────────────────────────────────────────────────────────
+const WEEKS = [
+  {
+    week:1, theme:"激活期", desc:"建立动作模式，感受肌肉发力位置", emoji:"🌱", color:"#00897b",
+    sessions:[
+      { day:"Day 1", label:"周一", focus:"臀腿力量 A", note:"深蹲为主", exercises:[
+        {name:"徒手深蹲", sets:3, reps:"12次", rest:60, target:"股四头肌、臀大肌",
+          tips:["脚与肩同宽，脚尖略朝外15°","下蹲时膝盖朝脚尖方向，不要内扣","背部挺直，不要弓腰","下蹲到大腿平行地面即可"],
+          errors:["膝盖内扣 → 想象膝盖推开一本书","脚跟抬起 → 重心放在全脚掌"]},
+        {name:"臀桥", sets:3, reps:"15次", rest:60, target:"臀大肌、腘绳肌",
+          tips:["仰卧，双脚踩地，膝盖弯曲90°","发力时先收紧臀部，再抬起髋部","顶峰时夹紧臀部保持2秒","下落时缓慢，不要砸下来"],
+          errors:["用腰发力而非臀 → 感受臀部被挤压的感觉","膝盖往外倒 → 膝盖保持与髋同宽"]},
+        {name:"靠墙静蹲", sets:3, reps:"40秒", rest:60, target:"股四头肌耐力",
+          tips:["背靠墙，脚离墙约一脚距离","下蹲至大腿平行地面","感受大腿前侧持续燃烧"],
+          errors:["膝盖超过脚尖太多 → 脚再往前移一些"]},
+        {name:"侧卧抬腿", sets:3, reps:"15次/侧", rest:45, target:"臀中肌",
+          tips:["侧躺，身体成一条直线","上腿保持伸直，向上抬起约45°","慢起慢落，不要甩腿"],
+          errors:["骨盆前倾/后仰 → 核心收紧保持稳定","腿抬太高借助腰力 → 控制在45°以内"]},
+      ]},
+      { day:"Day 2", label:"周二", focus:"有氧燃脂", note:"提心率促燃脂", exercises:[
+        {name:"原地高抬腿", sets:4, reps:"30秒", rest:30, target:"全身有氧",
+          tips:["膝盖抬至腰部高度","手臂配合大幅摆动","保持节奏稳定"],
+          errors:["速度过快导致动作变形 → 宁慢勿乱"]},
+        {name:"开合跳", sets:4, reps:"30秒", rest:30, target:"全身有氧",
+          tips:["落地时膝盖微弯缓冲","手臂大幅摆动","呼吸配合节奏"],
+          errors:["落地太重 → 脚尖先落地再过渡到全脚"]},
+        {name:"深蹲跳", sets:3, reps:"10次", rest:60, target:"臀腿爆发力",
+          tips:["下蹲到底再跳起","落地时屈膝缓冲","不要锁膝落地"],
+          errors:["膝盖落地时内扣 → 落地前想好膝盖方向"]},
+        {name:"登山跑", sets:3, reps:"30秒", rest:30, target:"核心、有氧",
+          tips:["俯撑姿势，双腿交替收腹","髋部不要抬太高","保持核心收紧"],
+          errors:["屁股翘起 → 身体保持一条斜线"]},
+      ]},
+      { day:"Day 3", label:"周四", focus:"臀腿力量 B", note:"硬拉弓步为主", exercises:[
+        {name:"罗马尼亚硬拉（徒手）", sets:3, reps:"12次", rest:60, target:"腘绳肌、臀大肌",
+          tips:["双腿微弯，髋部向后推","手沿腿前侧下滑，感受大腿后侧拉伸","臀部发力站起，不是腰部","下至小腿中部即可"],
+          errors:["弓腰驼背 → 全程挺胸，这个动作腰部受伤风险高","腿完全伸直 → 保持膝盖微弯"]},
+        {name:"后撤步弓步", sets:3, reps:"10次/侧", rest:60, target:"臀大肌、股四头肌",
+          tips:["一腿向后迈出，垂直下蹲","前腿膝盖不超过脚尖","后腿膝盖接近但不触地"],
+          errors:["重心太靠后 → 前腿大腿要垂直承重"]},
+        {name:"宽距深蹲", sets:3, reps:"12次", rest:60, target:"大腿内侧、臀部",
+          tips:["双脚比肩宽，脚尖朝外约45°","下蹲时膝盖沿脚尖方向打开","感受大腿内侧和臀部拉伸"],
+          errors:["膝盖内扣 → 下蹲时用膝盖推开双腿"]},
+        {name:"臀部画圆（跪姿）", sets:3, reps:"12次/侧", rest:45, target:"臀中肌、臀大肌",
+          tips:["四点跪撑，一腿向后上方画大圆","感受臀部全方位收缩","画圆要慢，控制动作"],
+          errors:["腰部随腿转动 → 固定骨盆只动腿"]},
+      ]},
+      { day:"Day 4", label:"周六", focus:"综合强化", note:"全面巩固+拉伸", exercises:[
+        {name:"行走弓步", sets:3, reps:"12步/侧", rest:60, target:"臀腿综合",
+          tips:["向前迈步弓步走，步伐稳定","保持躯干直立","感受前腿臀部发力"],
+          errors:["上身摇晃 → 收紧核心"]},
+        {name:"单腿臀桥", sets:3, reps:"10次/侧", rest:60, target:"臀大肌单侧强化",
+          tips:["一条腿伸直抬起，另一腿撑地发力","顶峰时感受撑地腿的臀部收紧","骨盆保持水平，不要倾斜"],
+          errors:["骨盆歪斜 → 先做双腿臀桥再过渡到单腿"]},
+        {name:"靠墙静蹲", sets:3, reps:"50秒", rest:90, target:"股四头肌",
+          tips:["比Day1多坚持10秒","最后10秒是关键，咬牙撑住"],
+          errors:[]},
+        {name:"全身拉伸", sets:1, reps:"10分钟", rest:0, target:"恢复预防受伤",
+          tips:["大腿前侧：站姿曲腿，手拉脚踝，保持30秒","腘绳肌：站姿体前屈，保持30秒","臀部：仰卧，一腿曲膝放另一腿上，保持30秒","髋屈肌：弓步姿势，重心前移，保持30秒"],
+          errors:[]},
+      ]},
+    ]
+  },
+  {
+    week:2, theme:"巩固期", desc:"增加组数与难度，强化动作稳定性", emoji:"💪", color:"#1565c0",
+    sessions:[
+      { day:"Day 1", label:"周一", focus:"臀腿力量 A", note:"增量深蹲", exercises:[
+        {name:"徒手深蹲", sets:4, reps:"15次", rest:60, target:"股四头肌、臀大肌",
+          tips:["动作同第1周，增加1组","注意全程膝盖不内扣"],
+          errors:["疲劳后更容易内扣，后几组更要注意"]},
+        {name:"臀桥（顶峰停3秒）", sets:4, reps:"12次", rest:60, target:"臀大肌",
+          tips:["每次顶峰停留3秒，强化臀部收缩感","感受臀部被'捏住'的感觉"],
+          errors:["不要用腰代偿 → 只有臀部在用力"]},
+        {name:"靠墙静蹲", sets:3, reps:"60秒", rest:90, target:"股四头肌",
+          tips:["挑战更长时间，比第1周多20秒"],
+          errors:[]},
+        {name:"侧卧抬腿（顶峰停留）", sets:3, reps:"12次/侧", rest:45, target:"臀中肌",
+          tips:["抬起后停留2秒再落下，强化外侧"],
+          errors:["保持骨盆稳定，不要借力"]},
+      ]},
+      { day:"Day 2", label:"周二", focus:"有氧燃脂", note:"升级HIIT", exercises:[
+        {name:"HIIT循环", sets:5, reps:"3动作/轮", rest:90, target:"全身燃脂",
+          tips:["高抬腿30秒 → 开合跳30秒 → 深蹲跳20秒","轮间休息90秒","保持每轮强度一致"],
+          errors:["后半程动作变形 → 宁可降低速度保持动作"]},
+        {name:"慢速深蹲（4拍下/2拍上）", sets:3, reps:"10次", rest:90, target:"离心控制",
+          tips:["4秒慢慢下蹲，感受肌肉拉伸","2秒站起来","这个比普通深蹲累很多，正常"],
+          errors:["下蹲过程中塌腰 → 全程挺胸收腹"]},
+        {name:"波比跳", sets:3, reps:"8次", rest:60, target:"全身爆发",
+          tips:["俯撑 → 跳起 → 落地俯撑，连贯完成","落地时膝盖缓冲"],
+          errors:["腰部塌陷 → 撑地时收紧核心"]},
+      ]},
+      { day:"Day 3", label:"周四", focus:"臀腿力量 B", note:"加重弓步硬拉", exercises:[
+        {name:"罗马尼亚硬拉（徒手）", sets:4, reps:"12次", rest:60, target:"腘绳肌、臀大肌",
+          tips:["增加1组，感受更深的腘绳肌拉伸"],
+          errors:["弓腰是大忌，宁可减少次数"]},
+        {name:"行走弓步", sets:3, reps:"12步/侧", rest:60, target:"臀腿综合",
+          tips:["比静态弓步更有挑战，注意平衡"],
+          errors:["步子太小 → 迈大步才能充分激活臀部"]},
+        {name:"宽距深蹲", sets:4, reps:"12次", rest:60, target:"大腿内侧",
+          tips:["感受每次下蹲时大腿内侧充分拉伸"],
+          errors:["膝盖不内扣"]},
+        {name:"单腿臀桥", sets:3, reps:"12次/侧", rest:60, target:"臀大肌",
+          tips:["骨盆保持水平，稳定性提升中"],
+          errors:[]},
+      ]},
+      { day:"Day 4", label:"周六", focus:"综合强化", note:"提升密度", exercises:[
+        {name:"深蹲+臀桥超级组", sets:4, reps:"各10次", rest:60, target:"臀腿综合",
+          tips:["深蹲10次立刻做臀桥10次，算一组","中间不休息，组间休息60秒","连续刺激臀腿，燃脂效果好"],
+          errors:["疲劳后保持动作质量，不要塌腰"]},
+        {name:"侧向弓步", sets:3, reps:"10次/侧", rest:60, target:"大腿内侧、臀中肌",
+          tips:["一腿向侧面迈出，重心移向该腿","另一腿保持伸直","感受迈出腿的大腿内侧拉伸"],
+          errors:["迈出脚尖朝前 → 脚尖朝侧面方向"]},
+        {name:"平板支撑", sets:3, reps:"45秒", rest:60, target:"核心稳定",
+          tips:["手肘支撑，身体成一条直线","收腹，臀部夹紧"],
+          errors:["屁股翘起或塌腰 → 降低时长，宁可做30秒但姿势正确"]},
+        {name:"全身拉伸", sets:1, reps:"10分钟", rest:0, target:"恢复",
+          tips:["重点拉伸大腿前后侧、臀部、髋屈肌","每个动作保持30-40秒"],
+          errors:[]},
+      ]},
+    ]
+  },
+  {
+    week:3, theme:"进阶期", desc:"引入哑铃负重，强度全面提升", emoji:"🏋️", color:"#e65100",
+    sessions:[
+      { day:"Day 1", label:"周一", focus:"哑铃臀腿 A", note:"负重深蹲为主", exercises:[
+        {name:"哑铃深蹲", sets:4, reps:"12次", rest:90, target:"股四头肌、臀大肌",
+          tips:["双手各持一个哑铃，自然垂于身侧","选择最后2次有点吃力的重量","动作同徒手深蹲，重心稍后移"],
+          errors:["持哑铃后更容易前倾 → 刻意挺胸","膝盖更容易内扣 → 更加注意膝盖方向"]},
+        {name:"哑铃臀桥", sets:4, reps:"12次", rest:60, target:"臀大肌",
+          tips:["将哑铃横放于髋骨位置（用毛巾垫着）","动作同徒手臀桥，感受更强烈的臀部收缩"],
+          errors:["哑铃位置不稳 → 用双手扶住两侧"]},
+        {name:"哑铃宽距深蹲", sets:3, reps:"12次", rest:90, target:"大腿内侧",
+          tips:["双手持一个哑铃于胸前或垂于两腿间","宽步距，脚尖外开45°"],
+          errors:["膝盖内扣 → 下蹲时膝盖往外推"]},
+        {name:"靠墙静蹲", sets:3, reps:"60秒", rest:90, target:"股四头肌",
+          tips:["可以双手持轻哑铃增加难度","坚持住！最后10秒是关键"],
+          errors:[]},
+      ]},
+      { day:"Day 2", label:"周二", focus:"有氧+核心", note:"HIIT升级版", exercises:[
+        {name:"HIIT升级版", sets:5, reps:"3动作/轮", rest:60, target:"全身燃脂",
+          tips:["深蹲跳20次 → 波比跳10次 → 登山跑30秒","强度要高，心跳明显加快"],
+          errors:["波比跳腰部塌陷 → 撑地时收紧核心"]},
+        {name:"平板支撑", sets:3, reps:"60秒", rest:60, target:"核心",
+          tips:["比第2周延长15秒","全程保持身体一条直线"],
+          errors:[]},
+        {name:"登山跑", sets:4, reps:"30秒", rest:30, target:"核心有氧",
+          tips:["速度加快，膝盖尽量靠近胸口"],
+          errors:["髋部不要抬起 → 保持俯撑姿势"]},
+      ]},
+      { day:"Day 3", label:"周四", focus:"哑铃臀腿 B", note:"硬拉弓步负重", exercises:[
+        {name:"哑铃罗马尼亚硬拉", sets:4, reps:"10次", rest:90, target:"腘绳肌、臀大肌",
+          tips:["双手持哑铃垂于大腿前，背部挺直","髋部向后推，哑铃沿腿前侧下滑","感受大腿后侧拉伸，下至小腿中部","臀部发力站起，不是腰部"],
+          errors:["弓腰驼背 → 这个动作腰部受伤风险高，宁可减重","硬拉不是深蹲，不要弯膝太多"]},
+        {name:"哑铃弓步蹲", sets:3, reps:"10次/侧", rest:90, target:"臀腿综合",
+          tips:["双手各持哑铃，步骤同徒手弓步","增加重量后更需要保持上身直立"],
+          errors:["重量太大导致膝盖不稳 → 先从轻重量开始"]},
+        {name:"哑铃侧弓步", sets:3, reps:"10次/侧", rest:90, target:"大腿内侧、臀中肌",
+          tips:["一腿向侧面迈出，重心移向该腿","另一腿保持伸直","感受迈出腿的大腿内侧拉伸"],
+          errors:["迈出脚尖朝前 → 脚尖朝侧面方向"]},
+        {name:"单腿臀桥（加重）", sets:3, reps:"12次/侧", rest:60, target:"臀大肌",
+          tips:["可以在腹部放哑铃增加难度","骨盆保持水平"],
+          errors:[]},
+      ]},
+      { day:"Day 4", label:"周六", focus:"综合强化", note:"循环训练", exercises:[
+        {name:"哑铃深蹲超级组", sets:4, reps:"各10次", rest:90, target:"臀腿综合",
+          tips:["哑铃深蹲10次立刻做哑铃臀桥10次","连续完成，组间休息90秒"],
+          errors:["疲劳时更容易弓腰 → 减轻重量保持姿势"]},
+        {name:"哑铃弓步行走", sets:3, reps:"12步/侧", rest:90, target:"臀腿综合",
+          tips:["持哑铃行走弓步，挑战平衡和力量"],
+          errors:[]},
+        {name:"平板支撑变式", sets:3, reps:"45秒", rest:60, target:"核心",
+          tips:["标准平板支撑基础上，可轮流抬腿保持3秒","增加难度，强化臀部和核心的连接"],
+          errors:[]},
+        {name:"全身拉伸", sets:1, reps:"10分钟", rest:0, target:"恢复",
+          tips:["重点：腘绳肌、臀部、髋屈肌、大腿内侧","每个部位30-45秒"],
+          errors:[]},
+      ]},
+    ]
+  },
+  {
+    week:4, theme:"冲刺期", desc:"最大重量与密度，全面突破", emoji:"🔥", color:"#ad1457",
+    sessions:[
+      { day:"Day 1", label:"周一", focus:"大重量 A", note:"深蹲冲刺", exercises:[
+        {name:"哑铃深蹲", sets:5, reps:"10次", rest:90, target:"股四头肌、臀大肌",
+          tips:["比第3周加重5-10%","前3组正常速度，后2组慢下（4拍）快上","感受肌肉极限刺激"],
+          errors:["加重后更容易代偿 → 宁可保持第3周重量也要姿势正确"]},
+        {name:"哑铃臀桥（停留3秒）", sets:4, reps:"10次", rest:60, target:"臀大肌",
+          tips:["增加重量+停留，双重刺激臀部","顶峰时感受臀部被'撑满'的感觉"],
+          errors:[]},
+        {name:"哑铃宽距深蹲", sets:4, reps:"12次", rest:90, target:"大腿内侧",
+          tips:["适当加重，感受更强的内侧刺激"],
+          errors:[]},
+        {name:"靠墙静蹲挑战", sets:3, reps:"90秒", rest:120, target:"股四头肌极限",
+          tips:["最终挑战！比第3周多30秒","最后20秒会非常痛，坚持住"],
+          errors:[]},
+      ]},
+      { day:"Day 2", label:"周二", focus:"燃脂冲刺", note:"Tabata极限", exercises:[
+        {name:"Tabata深蹲跳", sets:8, reps:"20秒全力", rest:10, target:"极限燃脂",
+          tips:["20秒全力→10秒休息，重复8轮，共4分钟","心率要达到最大心率80%以上","后几轮会非常累，这是正常的"],
+          errors:["后几轮保护膝盖，落地一定要缓冲"]},
+        {name:"HIIT终极版", sets:5, reps:"4动作/轮", rest:60, target:"全身燃脂",
+          tips:["波比跳10次→深蹲跳15次→登山跑30秒→高抬腿30秒","全力完成每轮"],
+          errors:[]},
+        {name:"有氧放松走", sets:1, reps:"10分钟", rest:0, target:"恢复",
+          tips:["慢走，让心率慢慢降下来","配合深呼吸"],
+          errors:[]},
+      ]},
+      { day:"Day 3", label:"周四", focus:"大重量 B", note:"硬拉冲刺", exercises:[
+        {name:"哑铃罗马尼亚硬拉", sets:5, reps:"10次", rest:90, target:"腘绳肌、臀大肌",
+          tips:["比第3周加重","感受大腿后侧前所未有的拉伸和收缩"],
+          errors:["加重后背部挺直更重要，这是这个动作的生命线"]},
+        {name:"哑铃弓步蹲（加重）", sets:4, reps:"10次/侧", rest:90, target:"臀腿综合",
+          tips:["选择有些挑战的重量","每一步都要稳，不要为了速度牺牲姿势"],
+          errors:[]},
+        {name:"哑铃侧弓步", sets:4, reps:"10次/侧", rest:90, target:"大腿内侧",
+          tips:["加重版，感受内侧更强刺激"],
+          errors:[]},
+        {name:"单腿臀桥（最大重量）", sets:4, reps:"10次/侧", rest:60, target:"臀大肌",
+          tips:["4周以来最重的版本，全力以赴"],
+          errors:[]},
+      ]},
+      { day:"Day 4", label:"周六", focus:"终极测试", note:"回顾对比进步", exercises:[
+        {name:"深蹲最大次数挑战", sets:1, reps:"力竭", rest:0, target:"测试进步",
+          tips:["用第1周的重量（徒手）","做到力竭为止，记录次数","和第1周对比，感受自己的进步！"],
+          errors:[]},
+        {name:"哑铃全身循环", sets:3, reps:"4动作连续", rest:120, target:"综合测试",
+          tips:["深蹲12次→硬拉10次→弓步10次/侧→臀桥15次","连续完成一轮，轮间休息2分钟"],
+          errors:[]},
+        {name:"庆祝拉伸", sets:1, reps:"15分钟", rest:0, target:"完成4周！",
+          tips:["好好犒劳自己的身体","大腿前后侧、臀部、髋屈肌、大腿内侧全面拉伸","每个部位40-50秒，认真感受"],
+          errors:[]},
+      ]},
+    ]
+  },
+];
+
+const HISTORY_KEY = "glute_history_v2";
+const REMINDER_KEY = "glute_reminder_v2";
+
+function getHistory() { try { return JSON.parse(localStorage.getItem(HISTORY_KEY)||"{}"); } catch { return {}; } }
+function setHistory(h) { try { localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); } catch {} }
+function getReminder() { try { return JSON.parse(localStorage.getItem(REMINDER_KEY)||"null"); } catch { return null; } }
+function setReminderStorage(r) { try { localStorage.setItem(REMINDER_KEY, JSON.stringify(r)); } catch {} }
+
+// ── TIMER ─────────────────────────────────────────────────────────────────
+function Timer({ duration, accent }) {
+  const [secs, setSecs] = useState(duration);
+  const [running, setRunning] = useState(false);
+  const [done, setDone] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => { setSecs(duration); setRunning(false); setDone(false); }, [duration]);
+
+  useEffect(() => {
+    if (running) {
+      ref.current = setInterval(() => {
+        setSecs(s => {
+          if (s <= 1) { clearInterval(ref.current); setRunning(false); setDone(true); return 0; }
+          return s - 1;
+        });
+      }, 1000);
+    } else { clearInterval(ref.current); }
+    return () => clearInterval(ref.current);
+  }, [running]);
+
+  const pct = secs / duration;
+  const r = 34, circ = 2 * Math.PI * r;
+  const m = Math.floor(secs / 60), s = secs % 60;
+
+  return (
+    <div style={{display:"flex",alignItems:"center",gap:"14px",background:"#111",borderRadius:"14px",padding:"12px 16px",marginBottom:"10px"}}>
+      <svg width="80" height="80" viewBox="0 0 80 80">
+        <circle cx="40" cy="40" r={r} fill="none" stroke="#222" strokeWidth="5"/>
+        <circle cx="40" cy="40" r={r} fill="none" stroke={done?"#4caf50":accent} strokeWidth="5"
+          strokeDasharray={circ} strokeDashoffset={circ*(1-pct)}
+          strokeLinecap="round" transform="rotate(-90 40 40)"
+          style={{transition:"stroke-dashoffset 1s linear"}}/>
+        <text x="40" y="46" textAnchor="middle" fill="white" fontSize="17" fontWeight="700" fontFamily="monospace">
+          {String(m).padStart(2,"0")}:{String(s).padStart(2,"0")}
+        </text>
+      </svg>
+      <div style={{flex:1}}>
+        <div style={{color:"#888",fontSize:"11px",marginBottom:"3px"}}>休息计时器 · {duration}秒</div>
+        <div style={{color:done?"#4caf50":"white",fontWeight:"700",fontSize:"13px",marginBottom:"8px"}}>
+          {done ? "✅ 休息完毕，可以继续了！" : running ? "计时中…" : "准备好了再开始"}
+        </div>
+        <div style={{display:"flex",gap:"6px"}}>
+          <button onClick={() => { if(done){setSecs(duration);setDone(false);}else{setRunning(r=>!r); }}}
+            style={{background:running?"#333":accent,color:"white",border:"none",borderRadius:"8px",padding:"7px 16px",fontSize:"12px",fontWeight:"700"}}>
+            {running?"暂停":done?"再计一次":"开始"}
+          </button>
+          <button onClick={()=>{clearInterval(ref.current);setSecs(duration);setRunning(false);setDone(false);}}
+            style={{background:"#222",color:"#888",border:"none",borderRadius:"8px",padding:"7px 12px",fontSize:"13px"}}>↺</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── HISTORY SCREEN ─────────────────────────────────────────────────────────
+function HistoryScreen({ onBack }) {
+  const history = getHistory();
+  const entries = Object.entries(history).sort((a,b)=>b[0].localeCompare(a[0]));
+
+  const streak = (() => {
+    let s=0, d=new Date();
+    for(let i=0;i<60;i++){
+      const k=d.toISOString().slice(0,10);
+      if(history[k]){s++; d.setDate(d.getDate()-1);}
+      else if(i>0) break;
+      else d.setDate(d.getDate()-1);
+    }
+    return s;
+  })();
+
+  const totalSessions = entries.length;
+  const weekCounts = [0,0,0,0];
+  entries.forEach(([,d])=>{ if(d.week>=0&&d.week<4) weekCounts[d.week]++; });
+
+  return (
+    <div style={{minHeight:"100vh",background:"#0a0a0a",padding:"16px",fontFamily:"'Noto Sans SC',sans-serif"}}>
+      <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"20px"}}>
+        <button onClick={onBack} style={{background:"#1a1a1a",border:"none",color:"#aaa",borderRadius:"10px",padding:"8px 14px",fontSize:"13px"}}>← 返回</button>
+        <div style={{fontSize:"18px",fontWeight:"800",color:"white"}}>训练记录</div>
+      </div>
+
+      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"10px",marginBottom:"16px"}}>
+        {[["🗓","累计训练",`${totalSessions} 天`],["🔥","当前连续",`${streak} 天`]].map(([e,l,v])=>(
+          <div key={l} style={{background:"#1a1a1a",borderRadius:"14px",padding:"16px",textAlign:"center"}}>
+            <div style={{fontSize:"24px",marginBottom:"4px"}}>{e}</div>
+            <div style={{fontSize:"10px",color:"#666",marginBottom:"4px"}}>{l}</div>
+            <div style={{fontSize:"26px",fontWeight:"900",color:"white"}}>{v}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{background:"#1a1a1a",borderRadius:"14px",padding:"14px",marginBottom:"16px"}}>
+        <div style={{fontSize:"11px",color:"#666",marginBottom:"10px",fontWeight:"600"}}>各周完成次数</div>
+        <div style={{display:"flex",gap:"8px"}}>
+          {WEEKS.map((w,i)=>(
+            <div key={i} style={{flex:1,textAlign:"center"}}>
+              <div style={{fontSize:"16px",marginBottom:"4px"}}>{w.emoji}</div>
+              <div style={{background:"#111",borderRadius:"6px",height:"40px",display:"flex",alignItems:"flex-end",overflow:"hidden",marginBottom:"4px"}}>
+                <div style={{width:"100%",background:w.color,height:`${Math.min(100,(weekCounts[i]/4)*100)}%`,borderRadius:"6px",transition:"height 0.5s",minHeight:weekCounts[i]>0?"4px":0}}/>
+              </div>
+              <div style={{fontSize:"12px",color:"white",fontWeight:"700"}}>{weekCounts[i]}</div>
+              <div style={{fontSize:"9px",color:"#555"}}>第{i+1}周</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {entries.length===0 ? (
+        <div style={{textAlign:"center",color:"#444",marginTop:"60px"}}>
+          <div style={{fontSize:"48px",marginBottom:"12px"}}>📭</div>
+          <div style={{fontSize:"14px"}}>还没有训练记录</div>
+          <div style={{fontSize:"12px",marginTop:"6px",color:"#333"}}>完成第一次训练后会显示在这里</div>
+        </div>
+      ) : (
+        <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+          {entries.map(([date,data])=>{
+            const w = WEEKS[data.week];
+            return (
+              <div key={date} style={{background:"#1a1a1a",borderRadius:"12px",padding:"14px",display:"flex",alignItems:"center",gap:"12px"}}>
+                <div style={{width:"40px",height:"40px",borderRadius:"10px",background:w?.color||"#333",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"20px",flexShrink:0}}>
+                  {data.completed===data.total?"🏆":w?.emoji||"💪"}
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:"13px",fontWeight:"700",color:"white"}}>{date}</div>
+                  <div style={{fontSize:"11px",color:"#666",marginTop:"2px"}}>
+                    第{data.week+1}周 {w?.theme} · {data.sessionFocus} · {data.completed}/{data.total}个动作
+                  </div>
+                  <div style={{background:"#2a2a2a",borderRadius:"3px",height:"3px",marginTop:"6px"}}>
+                    <div style={{background:w?.color||"#333",height:"3px",borderRadius:"3px",width:`${(data.completed/data.total)*100}%`}}/>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── REMINDER SCREEN ─────────────────────────────────────────────────────────
+function ReminderScreen({ onBack }) {
+  const saved = getReminder();
+  const [time, setTime] = useState(saved?.time||"07:00");
+  const [days, setDays] = useState(saved?.days||[1,2,4,6]);
+  const [enabled, setEnabled] = useState(saved?.enabled??false);
+  const [flash, setFlash] = useState(false);
+  const dayLabels = ["日","一","二","三","四","五","六"];
+  const defaultDays = [1,2,4,6];
+
+  const save = () => {
+    setReminderStorage({time,days,enabled});
+    setFlash(true);
+    setTimeout(()=>setFlash(false),2000);
+  };
+
+  return (
+    <div style={{minHeight:"100vh",background:"#0a0a0a",padding:"16px",fontFamily:"'Noto Sans SC',sans-serif"}}>
+      <div style={{display:"flex",alignItems:"center",gap:"10px",marginBottom:"24px"}}>
+        <button onClick={onBack} style={{background:"#1a1a1a",border:"none",color:"#aaa",borderRadius:"10px",padding:"8px 14px",fontSize:"13px"}}>← 返回</button>
+        <div style={{fontSize:"18px",fontWeight:"800",color:"white"}}>训练提醒</div>
+      </div>
+
+      <div style={{background:"#1a1a1a",borderRadius:"16px",padding:"20px",marginBottom:"12px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"22px"}}>
+          <div>
+            <div style={{fontSize:"15px",fontWeight:"700",color:"white"}}>开启训练提醒</div>
+            <div style={{fontSize:"11px",color:"#666",marginTop:"3px"}}>打开 App 时检查是否该训练了</div>
+          </div>
+          <div onClick={()=>setEnabled(e=>!e)} style={{width:"50px",height:"28px",borderRadius:"14px",background:enabled?"#00897b":"#333",cursor:"pointer",position:"relative",transition:"background 0.2s"}}>
+            <div style={{position:"absolute",top:"4px",left:enabled?"26px":"4px",width:"20px",height:"20px",borderRadius:"50%",background:"white",transition:"left 0.2s",boxShadow:"0 1px 4px rgba(0,0,0,0.4)"}}/>
+          </div>
+        </div>
+
+        <div style={{marginBottom:"20px"}}>
+          <div style={{fontSize:"11px",color:"#666",fontWeight:"600",marginBottom:"8px"}}>提醒时间</div>
+          <input type="time" value={time} onChange={e=>setTime(e.target.value)}
+            style={{background:"#111",border:"1px solid #2a2a2a",color:"white",borderRadius:"10px",padding:"12px 16px",fontSize:"22px",fontWeight:"800",width:"100%",outline:"none"}}/>
+        </div>
+
+        <div>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}}>
+            <div style={{fontSize:"11px",color:"#666",fontWeight:"600"}}>训练日</div>
+            <button onClick={()=>setDays(defaultDays)} style={{background:"none",border:"none",color:"#00897b",fontSize:"11px",cursor:"pointer"}}>恢复推荐（一二四六）</button>
+          </div>
+          <div style={{display:"flex",gap:"5px"}}>
+            {dayLabels.map((label,i)=>{
+              const sel=days.includes(i);
+              return (
+                <div key={i} onClick={()=>setDays(d=>sel?d.filter(x=>x!==i):[...d,i].sort())}
+                  style={{flex:1,textAlign:"center",padding:"9px 0",borderRadius:"8px",background:sel?"#00897b":"#111",border:`1px solid ${sel?"#00897b":"#2a2a2a"}`,cursor:"pointer",fontSize:"12px",fontWeight:sel?"700":"400",color:sel?"white":"#666",transition:"all 0.15s"}}>
+                  {label}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div style={{background:"#111",borderRadius:"12px",padding:"14px",marginBottom:"14px",fontSize:"12px",color:"#555",lineHeight:"1.9"}}>
+        <div style={{color:"#777",fontWeight:"600",marginBottom:"4px"}}>💡 说明</div>
+        <div>• 每次打开 App 会检查今天是否是训练日</div>
+        <div>• 如果是训练时间会弹出横幅提醒</div>
+        <div>• 建议设置在计划训练前10-15分钟</div>
+      </div>
+
+      <button onClick={save} style={{width:"100%",padding:"15px",background:flash?"#1b5e20":"#00897b",color:"white",border:"none",borderRadius:"12px",fontSize:"15px",fontWeight:"700",transition:"background 0.3s"}}>
+        {flash?"✅ 已保存！":"保存提醒设置"}
+      </button>
+    </div>
+  );
+}
+
+// ── MAIN APP ────────────────────────────────────────────────────────────────
+function App() {
+  const [screen, setScreen] = useState("main");
+  const [wk, setWk] = useState(0);
+  const [day, setDay] = useState(0);
+  const [expanded, setExpanded] = useState(null);
+  const [done, setDone] = useState({});
+  const [timerKey, setTimerKey] = useState(null);
+  const [sessionDone, setSessionDone] = useState(false);
+  const [reminderBanner, setReminderBanner] = useState(false);
+
+  const week = WEEKS[wk];
+  const session = week.sessions[day];
+  const accent = week.color;
+
+  useEffect(() => {
+    const r = getReminder();
+    if (!r?.enabled) return;
+    const now = new Date();
+    const [h,m] = r.time.split(":").map(Number);
+    const d = now.getDay();
+    if (r.days.includes(d) && now.getHours()===h && Math.abs(now.getMinutes()-m)<=15) {
+      setReminderBanner(true);
+    }
+  }, []);
+
+  const toggleDone = (i) => {
+    const key = `${wk}-${day}-${i}`;
+    setDone(prev => {
+      const next = {...prev, [key]: !prev[key]};
+      const allDone = session.exercises.every((_,idx) => next[`${wk}-${day}-${idx}`]);
+      if (allDone) {
+        const today = new Date().toISOString().slice(0,10);
+        const h = getHistory();
+        h[today] = { week:wk, sessionFocus:session.focus, completed:session.exercises.length, total:session.exercises.length };
+        setHistory(h);
+        setSessionDone(true);
+      }
+      return next;
+    });
+  };
+
+  const completedCount = session.exercises.filter((_,i) => done[`${wk}-${day}-${i}`]).length;
+  const pct = (completedCount / session.exercises.length) * 100;
+
+  if (screen==="history") return <HistoryScreen onBack={()=>setScreen("main")}/>;
+  if (screen==="reminder") return <ReminderScreen onBack={()=>setScreen("main")}/>;
+
+  const reminder = getReminder();
+
+  return (
+    <div style={{minHeight:"100vh",background:"#0a0a0a",padding:"16px 14px 32px",maxWidth:"480px",margin:"0 auto"}}>
+
+      {reminderBanner && (
+        <div className="fade-in" style={{background:accent,borderRadius:"12px",padding:"12px 14px",marginBottom:"12px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+          <div>
+            <div style={{fontWeight:"700",fontSize:"14px"}}>⏰ 训练时间到了！</div>
+            <div style={{fontSize:"11px",opacity:0.85,marginTop:"2px"}}>今天是 {session.label} 训练日，加油 💪</div>
+          </div>
+          <button onClick={()=>setReminderBanner(false)} style={{background:"rgba(0,0,0,0.2)",border:"none",color:"white",borderRadius:"6px",padding:"5px 9px",fontSize:"12px"}}>✕</button>
+        </div>
+      )}
+
+      {sessionDone && (
+        <div className="fade-in" style={{background:"#0a2e0a",border:"1px solid #2e7d32",borderRadius:"14px",padding:"16px",marginBottom:"12px",textAlign:"center"}}>
+          <div style={{fontSize:"36px"}}>🏆</div>
+          <div style={{fontWeight:"800",fontSize:"16px",color:"white",marginTop:"6px"}}>今日训练完成！</div>
+          <div style={{fontSize:"11px",color:"#4caf50",marginTop:"4px"}}>已自动记录到训练历史</div>
+          <button onClick={()=>setSessionDone(false)} style={{marginTop:"10px",background:"#1b5e20",border:"none",color:"white",borderRadius:"8px",padding:"7px 20px",fontSize:"12px",fontWeight:"700"}}>收起</button>
+        </div>
+      )}
+
+      {/* Header */}
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"16px"}}>
+        <div>
+          <div style={{fontSize:"11px",color:"#444",letterSpacing:"0.5px"}}>臀腿减脂 · 4周计划</div>
+          <div style={{fontSize:"22px",fontWeight:"900",color:"white",letterSpacing:"-0.5px",lineHeight:1.2}}>周一二四六<br/>居家训练</div>
+        </div>
+        <div style={{display:"flex",gap:"7px",marginTop:"2px"}}>
+          <button onClick={()=>setScreen("history")} style={{background:"#1a1a1a",border:"none",color:"#888",borderRadius:"10px",width:"40px",height:"40px",fontSize:"18px"}}>📊</button>
+          <button onClick={()=>setScreen("reminder")} style={{background:reminder?.enabled?accent:"#1a1a1a",border:"none",color:reminder?.enabled?"white":"#888",borderRadius:"10px",width:"40px",height:"40px",fontSize:"18px"}}>⏰</button>
+        </div>
+      </div>
+
+      {/* Week tabs */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"6px",marginBottom:"12px"}}>
+        {WEEKS.map((w,i)=>(
+          <button key={i} onClick={()=>{setWk(i);setDay(0);setExpanded(null);setTimerKey(null);setSessionDone(false);}}
+            style={{background:wk===i?w.color:"#1a1a1a",border:`1.5px solid ${wk===i?w.color:"#222"}`,color:wk===i?"white":"#666",borderRadius:"11px",padding:"9px 4px",textAlign:"center",transition:"all 0.15s"}}>
+            <div style={{fontSize:"17px"}}>{w.emoji}</div>
+            <div style={{fontSize:"10px",fontWeight:"700",marginTop:"2px"}}>第{i+1}周</div>
+            <div style={{fontSize:"9px",opacity:0.8,marginTop:"1px"}}>{w.theme}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Week desc */}
+      <div style={{background:"#1a1a1a",borderLeft:`3px solid ${accent}`,borderRadius:"0 10px 10px 0",padding:"9px 12px",marginBottom:"12px",fontSize:"12px",color:"#aaa"}}>
+        {week.emoji} {week.desc}
+      </div>
+
+      {/* Day tabs */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:"5px",marginBottom:"12px"}}>
+        {week.sessions.map((s,i)=>(
+          <button key={i} onClick={()=>{setDay(i);setExpanded(null);setTimerKey(null);setSessionDone(false);}}
+            style={{background:day===i?accent:"#1a1a1a",border:`1.5px solid ${day===i?accent:"#222"}`,color:day===i?"white":"#666",borderRadius:"10px",padding:"9px 4px",textAlign:"center",transition:"all 0.15s"}}>
+            <div style={{fontSize:"10px",fontWeight:"700"}}>{s.label}</div>
+            <div style={{fontSize:"9px",opacity:0.85,marginTop:"2px"}}>{s.focus.length>6?s.focus.slice(0,6)+"…":s.focus}</div>
+          </button>
+        ))}
+      </div>
+
+      {/* Session info + progress */}
+      <div style={{background:"#1a1a1a",borderRadius:"12px",padding:"12px 14px",marginBottom:"12px"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"8px"}}>
+          <div>
+            <span style={{fontWeight:"700",fontSize:"14px",color:"white"}}>{session.focus}</span>
+            <span style={{fontSize:"11px",color:"#555",marginLeft:"8px"}}>{session.note}</span>
+          </div>
+          <span style={{fontSize:"12px",color:accent,fontWeight:"700"}}>{completedCount}/{session.exercises.length}</span>
+        </div>
+        <div style={{background:"#2a2a2a",borderRadius:"4px",height:"5px"}}>
+          <div style={{background:accent,height:"5px",borderRadius:"4px",width:`${pct}%`,transition:"width 0.4s"}}/>
+        </div>
+      </div>
+
+      {/* Exercises */}
+      <div style={{display:"flex",flexDirection:"column",gap:"8px"}}>
+        {session.exercises.map((ex,i)=>{
+          const key = `${wk}-${day}-${i}`;
+          const isExp = expanded===key;
+          const isDone = done[key];
+          const isTimer = timerKey===key;
+          return (
+            <div key={i} className={isDone?"":""}
+              style={{background:"#1a1a1a",borderRadius:"14px",border:`1.5px solid ${isDone?accent:"#222"}`,overflow:"hidden",transition:"border-color 0.2s",opacity:isDone?0.65:1}}>
+              <div style={{display:"flex",alignItems:"center",padding:"13px",gap:"11px",cursor:"pointer"}} onClick={()=>setExpanded(isExp?null:key)}>
+                <div onClick={e=>{e.stopPropagation();toggleDone(i);}}
+                  style={{width:"32px",height:"32px",borderRadius:"50%",background:isDone?accent:"#111",border:`2px solid ${accent}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:"13px",fontWeight:"800",color:isDone?"white":accent,flexShrink:0,cursor:"pointer",transition:"all 0.2s"}}>
+                  {isDone?"✓":i+1}
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontWeight:"700",fontSize:"14px",color:isDone?"#666":"white",textDecoration:isDone?"line-through":"none"}}>{ex.name}</div>
+                  <div style={{fontSize:"11px",color:"#555",marginTop:"2px"}}>{ex.sets}组 · {ex.reps} · 休息{ex.rest}s · {ex.target}</div>
+                </div>
+                <div style={{fontSize:"13px",color:"#333"}}>{isExp?"▲":"▼"}</div>
+              </div>
+
+              {isExp && (
+                <div className="fade-in" style={{padding:"0 14px 14px",borderTop:"1px solid #1f1f1f"}}>
+                  {ex.rest > 0 && (
+                    <div style={{marginTop:"12px",marginBottom:"12px"}}>
+                      <button onClick={()=>setTimerKey(isTimer?null:key)}
+                        style={{background:isTimer?"#222":"#111",border:`1px solid ${isTimer?accent:"#2a2a2a"}`,color:isTimer?accent:"#777",borderRadius:"8px",padding:"6px 14px",fontSize:"11px",fontWeight:"600"}}>
+                        ⏱ {isTimer?"收起计时器":"开启休息计时器"}
+                      </button>
+                    </div>
+                  )}
+                  {isTimer && ex.rest > 0 && <Timer duration={ex.rest} accent={accent}/>}
+
+                  <div style={{marginBottom:"10px"}}>
+                    <div style={{fontSize:"11px",fontWeight:"700",color:accent,marginBottom:"6px",letterSpacing:"0.3px"}}>✅ 动作要点</div>
+                    {ex.tips.map((t,j)=>(
+                      <div key={j} style={{fontSize:"12px",color:"#bbb",padding:"4px 0",display:"flex",gap:"8px",lineHeight:"1.5"}}>
+                        <span style={{color:accent,flexShrink:0}}>·</span>{t}
+                      </div>
+                    ))}
+                  </div>
+                  {ex.errors.length>0 && (
+                    <div style={{marginBottom:"10px"}}>
+                      <div style={{fontSize:"11px",fontWeight:"700",color:"#ef5350",marginBottom:"6px"}}>⚠️ 常见错误</div>
+                      {ex.errors.map((e,j)=>(
+                        <div key={j} style={{fontSize:"12px",color:"#bbb",padding:"4px 0",display:"flex",gap:"8px",lineHeight:"1.5"}}>
+                          <span style={{color:"#ef5350",flexShrink:0}}>·</span>{e}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <button onClick={()=>toggleDone(i)}
+                    style={{width:"100%",padding:"11px",background:isDone?"#222":accent,color:isDone?"#666":"white",border:"none",borderRadius:"9px",fontSize:"13px",fontWeight:"700",transition:"all 0.2s"}}>
+                    {isDone?"取消完成":"完成这个动作 ✓"}
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div style={{marginTop:"16px",background:"#1a1a1a",borderRadius:"12px",padding:"12px 14px",fontSize:"11px",color:"#444",lineHeight:"1.9"}}>
+        <div style={{color:"#666",fontWeight:"700",marginBottom:"4px"}}>💡 今日提示</div>
+        <div>• 点圆圈数字可直接标记完成，点标题展开详情</div>
+        <div>• 关节痛立刻停，肌肉酸痛是正常反应</div>
+        <div>• 全部打勾后自动保存到训练记录 📊</div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
